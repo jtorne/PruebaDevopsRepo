@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Devops Ant" basedir="." xmlns:sonar="antlib:org.sonar.ant">
+	<property name="main.build.dir" value="build"/>
+	<property name="main.src.dir" value="src"/>
+	<property name="test.build.dir" value="build/test"/>
+	<property name="test.src.dir" value="test"/>
+	<property name="main.build.report.dir" value="build/report"/>	
+	
+	<property name="sonar.host.url" value="http://localhost:9000" />
+	<property name="sonar.projectKey" value="org.codehaus.sonar:example-java-ant" />
+	<property name="sonar.projectName" value="Simple Java Project analyzed with the SonarQube Ant Task" />
+	<property name="sonar.projectVersion" value="1.0" />
+	<property name="sonar.sources" value="src" />
+	<property name="sonar.java.binaries" value="build" />
+	<property name="sonar.java.libraries" value=".\WebContent\WEB-INF\lib/*.jar" />
+	
+	  <path id="classpath.test">
+    	<fileset dir=".\WebContent\WEB-INF\lib">
+   			<include name="**/*.jar"/>
+   			<include name="**/*.zip"/>
+   		</fileset>
+	    <pathelement location="${main.build.dir}"/>
+	  </path>
+	
+	<target name="compile">
+		<mkdir dir="${main.build.dir}"/>
+		<copy file="${main.src.dir}/hibernate.cfg.xml" tofile="${main.build.dir}/hibernate.cfg.xml" />
+		<copy file="${main.src.dir}/hibernateServerStage.cfg.xml" tofile="${main.build.dir}/hibernateServerStage.cfg.xml" />
+		<javac encoding="iso-8859-1" srcdir="${main.src.dir}" destdir="${main.build.dir}" includeantruntime="false" >
+			<classpath refid="classpath.test"/>
+	   </javac>
+	</target>
+	
+	<target name="test-compile" depends="compile">
+		<mkdir dir="${test.build.dir}"/>
+	    <javac encoding="iso-8859-1" srcdir="${test.src.dir}" destdir="${test.build.dir}" includeantruntime="false">
+	    	<classpath refid="classpath.test"/>
+	    </javac>
+	</target>
+	
+	<target name="test" depends="test-compile">
+		<mkdir dir="${main.build.report.dir}"/>
+	    <junit printsummary="on" haltonfailure="yes" fork="true">
+	        <classpath>
+	        	<path refid="classpath.test"/>
+	          	<pathelement location="${test.build.dir}"/>
+	        </classpath>
+	        <formatter type="xml"/>
+	        <batchtest todir="${main.build.report.dir}">
+	            <fileset dir="${test.src.dir}" includes="**/*AllTests.java" />
+	        </batchtest>
+	    </junit>
+	  </target>
+	
+	<target name="report" depends="test">
+	        <junitreport todir="${main.build.report.dir}">
+	            <fileset dir="${main.build.report.dir}">
+	                <include name="*.xml"/>
+	            </fileset>
+	            <report todir="${main.build.report.dir}"/>
+	        </junitreport>
+	</target>
+	
+	<target name="sonar">
+	    <taskdef uri="antlib:org.sonar.ant" resource="org/sonar/ant/antlib.xml">
+	        <classpath path="$HOME/.ant/lib/sonarqube-ant-task-*.jar" />
+	    </taskdef>
+	    <!-- Execute the SonarQube analysis -->
+	    <sonar:sonar />
+	</target>
+	
+	<target name="war">
+		<mkdir dir="dist"/>
+		<war destfile="dist/WBuild.war" webxml="WebContent/WEB-INF/web.xml">
+			<fileset dir="WebContent"/>
+			<lib dir="WebContent/WEB-INF/lib"/>
+			<classes dir="build/"/>
+		</war>
+	</target>
+</project> 
